@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Segmentos & Excel</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">TRELLO POWER-UP</p>
+        <h1>Segmentos <span class="gradient-word">& Excel</span></h1>
+        <p id="boardName" class="subtle">Carregando quadro…</p><p class="hero-tip">Classifique clientes em lote, encontre exceções e exporte um Excel organizado.</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="refreshBtn" class="button button-secondary" type="button">Atualizar dados</button>
+        <button id="exportBtn" class="button button-primary" type="button" disabled>Exportar Excel</button>
+      </div>
+    </header>
+
+    <section id="notice" class="notice hidden" role="status" aria-live="polite"></section>
+
+    <section class="stats-grid" aria-label="Resumo">
+      <article class="stat-card"><span>Total visível</span><strong id="totalCards">—</strong></article>
+      <article class="stat-card"><span>Resultado do filtro</span><strong id="filteredCards">—</strong></article>
+      <article class="stat-card"><span>Com segmento selecionado</span><strong id="withSegment">—</strong></article>
+      <article class="stat-card"><span>Sem segmento selecionado</span><strong id="withoutSegment">—</strong></article>
+    </section>
+
+    <div class="layout">
+      <aside class="filters-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Filtros</h2>
+            <p>Escolha quais etiquetas representam os segmentos que você está organizando.</p>
+          </div>
+          <button id="clearFiltersBtn" class="button-link" type="button">Limpar</button>
+        </div>
+
+        <label class="field">
+          <span>Buscar cliente/card</span>
+          <input id="textSearch" type="search" placeholder="Nome, descrição, lista ou responsável" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>Regra das etiquetas selecionadas</span>
+          <select id="matchMode">
+            <option value="hasAny">Tem pelo menos uma das etiquetas</option>
+            <option value="hasAll">Tem todas as etiquetas</option>
+            <option value="hasNone">NÃO tem nenhuma das etiquetas</option>
+            <option value="missingAny">Falta pelo menos uma das etiquetas</option>
+          </select>
+          <small id="modeHelp">Mostra cards que têm ao menos um dos segmentos escolhidos.</small>
+        </label>
+
+        <section class="filter-group">
+          <div class="filter-group-title">
+            <div>
+              <h3>Etiquetas de segmento</h3>
+              <p>Defina TODOS os segmentos existentes; somente eles entram na coluna Segmento. Essas etiquetas também são usadas no filtro.</p>
+            </div>
+            <span id="segmentCount" class="pill">0</span>
+          </div>
+          <input id="segmentLabelSearch" class="compact-search" type="search" placeholder="Buscar etiqueta…" autocomplete="off" />
+          <div id="segmentLabels" class="checklist" aria-label="Etiquetas de segmento"></div>
+        </section>
+
+        <section class="filter-group">
+          <div class="filter-group-title">
+            <div>
+              <h3>Exceções / excluir</h3>
+              <p>Remove do resultado qualquer card que tenha uma destas etiquetas.</p>
+            </div>
+            <span id="excludeCount" class="pill">0</span>
+          </div>
+          <input id="excludeLabelSearch" class="compact-search" type="search" placeholder="Buscar etiqueta…" autocomplete="off" />
+          <div id="excludeLabels" class="checklist" aria-label="Etiquetas a excluir"></div>
+        </section>
+
+        <section class="filter-group">
+          <div class="filter-group-title">
+            <div>
+              <h3>Listas</h3>
+              <p>Opcional. Se nada estiver marcado, usa todas as listas visíveis.</p>
+            </div>
+            <span id="listCount" class="pill">0</span>
+          </div>
+          <div id="listFilters" class="checklist checklist-short" aria-label="Listas"></div>
+        </section>
+
+        <label class="toggle-row">
+          <input id="onlyWithoutAnyLabel" type="checkbox" />
+          <span>
+            <strong>Somente cards sem nenhuma etiqueta</strong>
+            <small>Útil para encontrar cards totalmente não classificados.</small>
+          </span>
+        </label>
+
+        <div class="save-state">
+          <span id="saveStatus">Filtros salvos automaticamente neste quadro para você.</span>
+        </div>
+      </aside>
+
+      <main class="results-panel">
+        <div class="results-toolbar">
+          <div>
+            <h2>Clientes encontrados</h2>
+            <p id="resultsSummary">Carregando…</p>
+          </div>
+          <label class="sort-control">Ordenar
+            <select id="sortBy">
+              <option value="listThenName">Lista + nome</option>
+              <option value="name">Nome</option>
+              <option value="activityDesc">Atividade mais recente</option>
+              <option value="activityAsc">Atividade mais antiga</option>
+            </select>
+          </label>
+        </div>
+
+        <section class="batch-bar" aria-label="Alteração em lote">
+          <div class="batch-top"><div><strong id="selectedCount">0 clientes selecionados</strong><p>Escolha cards na tabela e atribua um único segmento, sem apagar etiquetas de pagamento ou status.</p></div><button id="selectVisibleBtn" class="button button-secondary" type="button">Selecionar resultados</button><button id="deselectBtn" class="button button-secondary" type="button">Desmarcar</button></div>
+          <div class="batch-actions"><label class="field batch-target"><span>Segmento para aplicar</span><select id="targetSegment"><option value="">Escolha um segmento…</option></select></label><button id="authorizeBtn" class="button button-secondary" type="button">Autorizar edição</button><button id="applyBatchBtn" class="button button-primary" type="button" disabled>Aplicar segmento aos selecionados</button></div>
+          <small id="batchStatus">A edição em lote precisa da chave pública do Power-Up e de autorização read/write.</small>
+          </section>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input id="selectAll" type="checkbox" aria-label="Selecionar todos os resultados" /></th>
+                <th>Cliente / Card</th>
+                <th>Segmento</th>
+                <th>Lista</th>
+                <th>Responsáveis</th>
+                <th>Última atividade</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+          <div id="emptyState" class="empty-state hidden">
+            <h3>Nenhum card encontrado</h3>
+            <p>Ajuste as etiquetas, exceções ou listas selecionadas.</p>
+          </div>
+        </div>
+
+        <footer class="results-footer">
+          <p><strong>Importante:</strong> o Power-Up lê os cards visíveis do quadro: cards abertos em listas abertas.</p>
+          <p>O Excel nunca inclui etiquetas extras na coluna de segmento. Na edição em lote, etiquetas de pagamento, status e outras categorias são preservadas.</p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="./js/config.js"></script>
+  <script src="./js/batch-engine.js"></script>
+  <script src="./js/filter-engine.js"></script>
+  <script src="./js/export-xlsx.js"></script>
+  <script src="./js/modal.js"></script>
+</body>
+</html>
